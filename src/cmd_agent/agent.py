@@ -1,9 +1,7 @@
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq # NOVO: Importação da Groq
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-# IMPORTANTE: Importando as classes de memória do LangChain
 from langchain_core.messages import HumanMessage, AIMessage
 
 from tools import ferramentas 
@@ -11,17 +9,16 @@ from tools import ferramentas
 class CMDAgent:
     def __init__(self, session_id=None):
         self.session_id = session_id
-        
-        # NOVO: Inicia a memória vazia apenas uma vez quando o usuário entra
         self.chat_history = []
         
-        self.llm = ChatGoogleGenerativeAI(
-            model='gemini-flash-latest',
+        # 1. Configuração do Modelo (Agora usando Llama 3 via Groq)
+        self.llm = ChatGroq(
+            model_name='llama3-70b-8192',
             temperature=0.1,
-            api_key=os.getenv('GEMINI_API_KEY')
+            api_key=os.getenv('GROQ_API_KEY') # NOVO: Busca a chave da Groq
         )
 
-        # CORREÇÃO: Prompt atualizado exigindo a confirmação do usuário antes de salvar
+        # 2. Instruções do Sistema (Mantido idêntico)
         instrucoes_sistema = """
         Você é o assistente virtual do Guia de Boulders.
         Sua função é fornecer informações e cadastrar novas vias no banco de dados.
@@ -57,7 +54,7 @@ class CMDAgent:
         try:
             resposta = self.agent_executor.invoke({
                 "input": mensagem_usuario,
-                "chat_history": self.chat_history # CORREÇÃO: Agora passa o histórico real
+                "chat_history": self.chat_history
             })
             
             output = resposta["output"]
@@ -69,7 +66,7 @@ class CMDAgent:
             else:
                 texto_final = str(output)
 
-            # NOVO: Salva a interação na memória para a próxima mensagem
+            # Salva a interação na memória para a próxima mensagem
             self.chat_history.append(HumanMessage(content=mensagem_usuario))
             self.chat_history.append(AIMessage(content=texto_final))
             
