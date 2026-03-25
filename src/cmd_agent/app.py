@@ -1,6 +1,12 @@
 import os
+import asyncio
 from threading import Thread
 from flask import Flask
+
+# Ligamos o motor assíncrono ANTES de carregar o Pyrogram
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
 from telegram import TelegramBot
 
 # 1. Criamos um "falso site" para enganar o servidor da nuvem
