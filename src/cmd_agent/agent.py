@@ -31,7 +31,7 @@ class CMDAgent:
         PASSO 3: PARE E AGUARDE O ENVIO DA FOTO.
         PASSO 4: O sistema backend enviará para você uma mensagem interna contendo a URL pública da foto.
         PASSO 5: Ao receber a URL, NÃO acione a ferramenta de salvar ainda. Mostre ao usuário um resumo com todos os dados (Nome, Grau, Setor, Descrição e o link da Foto) e pergunte: "Posso confirmar e salvar no banco de dados?".
-        PASSO 6: Somente após o usuário responder confirmando (ex: "sim", "pode", "salvar"), acione a ferramenta de salvar no banco de dados. Em seguida, avise que foi salvo com sucesso.
+        PASSO 6: Somente após o usuário responder confirmando, acione a ferramenta de salvar no banco de dados. ATENÇÃO: Verifique a resposta retornada pela ferramenta. Se ela retornar um "Erro", peça desculpas e informe o erro exato ao usuário. SÓ Diga que o boulder foi salvo com sucesso se a ferramenta retornar a confirmação positiva de sucesso.
         """
 
         self.prompt = ChatPromptTemplate.from_messages([
