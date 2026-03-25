@@ -100,3 +100,6 @@ def cadastrar_boulder(nome: str, setor: str, grau: str, saida: str, beta: str = 
             
     except Exception as e:
         return f"Erro ao tentar cadastrar no banco de dados: {str(e)}"
+
+# Empacotando as ferramentas para o agente conseguir importar
+ferramentas = [buscar_boulder, cadastrar_boulder]

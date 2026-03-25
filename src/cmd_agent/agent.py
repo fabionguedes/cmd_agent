@@ -3,12 +3,13 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-# Importe a lista de ferramentas do seu arquivo tools.py
-# Substitua 'ferramentas' pelo nome correto da sua variável, caso seja diferente
+# Importando a lista de ferramentas que agora existe no tools.py
 from tools import ferramentas 
 
-class AgenteCMD:
-    def __init__(self):
+class CMDAgent: # O NOME FOI CORRIGIDO AQUI PARA BATER COM O TELEGRAM.PY
+    def __init__(self, session_id=None): # AGORA ELE ACEITA O USER_ID
+        self.session_id = session_id
+        
         # 1. Configuração do Modelo
         self.llm = ChatGoogleGenerativeAI(
             model='gemini-flash-latest',
@@ -34,7 +35,7 @@ class AgenteCMD:
         # 3. Montagem do Template
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", instrucoes_sistema),
-            MessagesPlaceholder(variable_name="chat_history"),
+            MessagesPlaceholder(variable_name="chat_history", optional=True),
             ("human", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
@@ -50,14 +51,14 @@ class AgenteCMD:
             handle_parsing_errors=True
         )
 
-    def invocar(self, mensagem_usuario, historico_chat):
+    def run(self, mensagem_usuario): # O COMANDO FOI CORRIGIDO PARA BATER COM O TELEGRAM.PY
         """
-        Envia a mensagem e o histórico para o modelo e retorna a resposta em texto.
+        Envia a mensagem para o modelo e retorna a resposta em texto.
         """
         try:
             resposta = self.agent_executor.invoke({
                 "input": mensagem_usuario,
-                "chat_history": historico_chat
+                "chat_history": [] # Lista vazia para evitar erros caso não haja memória configurada
             })
             return resposta["output"]
         except Exception as e:
