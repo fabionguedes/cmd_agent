@@ -8,7 +8,6 @@ from pyrogram.types import Message
 from pyrogram.enums import ChatAction
 from agent import CMDAgent
 
-# IMPORT ATUALIZADO: Chama a função do novo ficheiro em vez do supabase direto
 from storage import upload_foto_supabase 
 
 load_dotenv()
@@ -27,6 +26,9 @@ class TelegramBot:
             api_hash=os.getenv('TELEGRAM_API_HASH'),
             bot_token=os.getenv('TELEGRAM_TOKEN'),
         )
+
+        # NOVO: Dicionário para manter a memória do agente de cada usuário viva
+        self.sessoes = {} 
 
         self.app.add_handler(MessageHandler(self.start, filters.command("start")))
         
@@ -48,19 +50,14 @@ class TelegramBot:
 
         await client.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
 
-        # --- LÓGICA DE INTERCEÇÃO DA FOTOGRAFIA (ATUALIZADA) ---
         foto_url = None
         if message.photo:
             try:
                 self.logger.info(f"A descarregar fotografia do utilizador {user_id}...")
                 
-                # 1. Faz o download da imagem
                 file_path = await message.download()
-                
-                # 2. Envia para o storage.py processar o upload de forma limpa
                 foto_url = upload_foto_supabase(file_path, user_id)
                 
-                # 3. Apaga o ficheiro local para não encher o disco do servidor
                 if os.path.exists(file_path):
                     os.remove(file_path)
                 
@@ -73,20 +70,23 @@ class TelegramBot:
                 self.logger.error(f"Erro ao processar imagem: {e}")
                 await message.reply_text("Ups! Tive um problema a guardar a fotografia da via. Podemos continuar, mas a linha vai ficar sem foto por agora.")
 
-        # --- PREPARAÇÃO DA MENSAGEM PARA O AGENTE ---
         if foto_url:
             user_input += f"\n\n[Nota do Sistema: O utilizador enviou uma fotografia. O link seguro gerado para a foto é: {foto_url}]"
 
         if not user_input.strip():
             user_input = "Estou a enviar apenas esta fotografia."
 
-        self.agent = CMDAgent(session_id=str(user_id))
+        # CORREÇÃO: Verifica se o usuário já tem um agente com memória. Se não, cria um.
+        if user_id not in self.sessoes:
+            self.sessoes[user_id] = CMDAgent(session_id=str(user_id))
+        
+        agente_atual = self.sessoes[user_id]
 
         try:
             loop = asyncio.get_running_loop()
             response = await loop.run_in_executor(
                 None,
-                self.agent.run,
+                agente_atual.run,
                 user_input
             )
         except Exception as err:
