@@ -11,11 +11,11 @@ class CMDAgent:
         self.session_id = session_id
         self.chat_history = []
         
-        # 1. Configuração do Modelo (Agora usando Llama 3 via Groq)
+        # 1. Configuração do Modelo (Atualizado para o Llama 3.3 mais recente)
         self.llm = ChatGroq(
-            model_name='llama3-70b-8192',
+            model_name='llama-3.3-70b-versatile', # <-- Apenas esta linha mudou!
             temperature=0.1,
-            api_key=os.getenv('GROQ_API_KEY') # NOVO: Busca a chave da Groq
+            api_key=os.getenv('GROQ_API_KEY')
         )
 
         # 2. Instruções do Sistema (Mantido idêntico)
