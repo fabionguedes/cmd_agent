@@ -51,7 +51,7 @@ class CMDAgent: # O NOME FOI CORRIGIDO AQUI PARA BATER COM O TELEGRAM.PY
             handle_parsing_errors=True
         )
 
-    def run(self, mensagem_usuario): # O COMANDO FOI CORRIGIDO PARA BATER COM O TELEGRAM.PY
+    def run(self, mensagem_usuario):
         """
         Envia a mensagem para o modelo e retorna a resposta em texto.
         """
@@ -60,6 +60,17 @@ class CMDAgent: # O NOME FOI CORRIGIDO AQUI PARA BATER COM O TELEGRAM.PY
                 "input": mensagem_usuario,
                 "chat_history": [] # Lista vazia para evitar erros caso não haja memória configurada
             })
-            return resposta["output"]
+            
+            output = resposta["output"]
+            
+            # CORREÇÃO: Extrai apenas o texto se a API retornar uma lista de blocos (JSON)
+            if isinstance(output, list):
+                text_parts = [item['text'] for item in output if isinstance(item, dict) and 'text' in item]
+                if text_parts:
+                    return "\n".join(text_parts)
+                    
+            # Se já vier como texto limpo (comportamento padrão), retorna diretamente
+            return str(output)
+            
         except Exception as e:
             return f"Desculpa, ocorreu um erro interno ao processar sua solicitação: {e}"
