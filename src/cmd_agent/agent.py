@@ -19,7 +19,7 @@ class CMDAgent:
         
         # --- O NOVO CÉREBRO: GEMINI ---
         self.llm = ChatGoogleGenerativeAI(
-            model='gemini-1.5-flash', # <-- Mudamos para a versão 1.5 hiperestável!
+            model='gemini-1.5-flash-latest', # <-- Adicionamos o "-latest" aqui!
             temperature=0.1,
             api_key=os.getenv('GEMINI_API_KEY')
         )
