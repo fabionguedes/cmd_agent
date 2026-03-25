@@ -3,7 +3,6 @@ from supabase import create_client, Client
 from langchain_core.tools import tool
 from dotenv import load_dotenv
 
-# NOVO IMPORT: O criador de vetores do Gemini
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 load_dotenv(override=True)
@@ -12,9 +11,9 @@ url: str = os.getenv("SUPABASE_URL")
 key: str = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
-# Inicializando a "máquina" que transforma texto em matemática (vetores)
+# Inicializando a "máquina" com o modelo mais recente
 gerador_vetores = GoogleGenerativeAIEmbeddings(
-    model="models/gemini-embedding-001", # <-- Atualizado para o novo modelo oficial
+    model="models/gemini-embedding-001",
     google_api_key=os.getenv("GEMINI_API_KEY") 
 )
 
@@ -27,13 +26,16 @@ def buscar_boulder(termo_busca: str) -> str:
         # 1. Transforma o que o usuário digitou em um vetor matemático
         vetor_busca = gerador_vetores.embed_query(termo_busca)
         
-        # 2. Chama a função inteligente do Supabase em vez da busca burra de texto
+        # CORREÇÃO: Corta o vetor gigante de 3072 para os exatos 768 que o banco aceita
+        vetor_busca = vetor_busca[:768]
+        
+        # 2. Chama a função inteligente do Supabase
         response = supabase.rpc(
             'match_boulders', 
             {
                 'query_embedding': vetor_busca,
-                'match_threshold': 0.3, # A similaridade mínima (30%). Ajuste se precisar ser mais rigoroso!
-                'match_count': 3        # Traz apenas os 3 boulders mais parecidos para não encher a tela
+                'match_threshold': 0.3, 
+                'match_count': 3        
             }
         ).execute()
         
@@ -46,8 +48,6 @@ def buscar_boulder(termo_busca: str) -> str:
         for b in data:
             foto = b.get('foto_url')
             link_foto = f"[Ver foto da linha]({foto})" if foto else "Sem foto cadastrada"
-            
-            # Pegando a porcentagem de "Match" para mostrar para o usuário
             match_porcento = round(b.get('similarity', 0) * 100)
             
             resultados.append(
@@ -76,8 +76,11 @@ def cadastrar_boulder(nome: str, setor: str, grau: str, saida: str, beta: str = 
         # 1. Juntamos tudo que importa sobre a via em um texto contínuo
         texto_para_vetor = f"Via chamada {nome}, localizada no bloco {bloco}, setor {setor}. O grau é {grau} e a saída é {saida}. Informações adicionais e beta: {beta}."
         
-        # 2. Transformamos a alma da via em um vetor de 768 números
+        # 2. Transformamos a alma da via em um vetor
         vetor_da_via = gerador_vetores.embed_query(texto_para_vetor)
+        
+        # CORREÇÃO: Corta o vetor gigante de 3072 para os exatos 768 que o banco aceita
+        vetor_da_via = vetor_da_via[:768]
 
         # 3. Empacotamos tudo para enviar para o Supabase
         novo_boulder = {
@@ -88,7 +91,7 @@ def cadastrar_boulder(nome: str, setor: str, grau: str, saida: str, beta: str = 
             "saida": saida, 
             "beta": beta,
             "foto_url": foto_url,
-            "embedding": vetor_da_via  # <-- O grande segredo adicionado aqui!
+            "embedding": vetor_da_via 
         }
         
         response = supabase.table('boulders').insert(novo_boulder).execute()
