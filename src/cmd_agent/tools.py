@@ -13,7 +13,10 @@ key: str = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 # Inicializando a "máquina" que transforma texto em matemática (vetores)
-gerador_vetores = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+gerador_vetores = GoogleGenerativeAIEmbeddings(
+    model="models/text-embedding-004",
+    google_api_key=os.getenv("GEMINI_API_KEY") # Avisando qual é a chave correta!
+)
 
 @tool
 def buscar_boulder(termo_busca: str) -> str:
