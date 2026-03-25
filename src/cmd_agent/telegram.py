@@ -8,8 +8,8 @@ from pyrogram.types import Message
 from pyrogram.enums import ChatAction
 from agent import CMDAgent
 
-# Importamos o cliente do Supabase que já criámos no tools.py
-from tools import supabase 
+# IMPORT ATUALIZADO: Chama a função do novo ficheiro em vez do supabase direto
+from storage import upload_foto_supabase 
 
 load_dotenv()
 
@@ -30,7 +30,6 @@ class TelegramBot:
 
         self.app.add_handler(MessageHandler(self.start, filters.command("start")))
         
-        # ATUALIZAÇÃO: O filtro agora aceita mensagens de texto OU fotografias
         self.app.add_handler(MessageHandler(
             self.handle_message, 
             (filters.text | filters.photo) & ~filters.command("start")
@@ -45,50 +44,39 @@ class TelegramBot:
     async def handle_message(self, client: Client, message: Message):
         user_id = message.from_user.id
         
-        # O texto pode vir da mensagem normal ou da legenda (caption) de uma fotografia
         user_input = message.text or message.caption or ""
 
         await client.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
 
-        # --- LÓGICA DE INTERCEÇÃO DA FOTOGRAFIA ---
+        # --- LÓGICA DE INTERCEÇÃO DA FOTOGRAFIA (ATUALIZADA) ---
         foto_url = None
         if message.photo:
             try:
                 self.logger.info(f"A descarregar fotografia do utilizador {user_id}...")
                 
-                # 1. Faz o download da imagem do Telegram para uma pasta local temporária
+                # 1. Faz o download da imagem
                 file_path = await message.download()
-                file_name = os.path.basename(file_path)
                 
-                # 2. Caminho único no Supabase (ex: fotos/123456_imagem.jpg)
-                supabase_path = f"fotos/{user_id}_{file_name}"
+                # 2. Envia para o storage.py processar o upload de forma limpa
+                foto_url = upload_foto_supabase(file_path, user_id)
                 
-                # 3. Faz o upload para o bucket 'boulders' no Supabase
-                with open(file_path, "rb") as f:
-                    supabase.storage.from_("boulders").upload(
-                        path=supabase_path,
-                        file=f,
-                        file_options={"content-type": "image/jpeg"}
-                    )
+                # 3. Apaga o ficheiro local para não encher o disco do servidor
+                if os.path.exists(file_path):
+                    os.remove(file_path)
                 
-                # 4. Obtém o link público da imagem gerada
-                foto_url = supabase.storage.from_("boulders").get_public_url(supabase_path)
-                
-                # 5. Apaga o ficheiro local para não encher o disco do servidor
-                os.remove(file_path)
-                
-                self.logger.info(f"Fotografia guardada com sucesso: {foto_url}")
+                if foto_url:
+                    self.logger.info(f"Fotografia guardada com sucesso: {foto_url}")
+                else:
+                    raise Exception("A função de storage devolveu um link vazio.")
                 
             except Exception as e:
                 self.logger.error(f"Erro ao processar imagem: {e}")
                 await message.reply_text("Ups! Tive um problema a guardar a fotografia da via. Podemos continuar, mas a linha vai ficar sem foto por agora.")
 
         # --- PREPARAÇÃO DA MENSAGEM PARA O AGENTE ---
-        # Se detetámos uma fotografia, injetamos o link silenciosamente no texto que o Agente vai ler
         if foto_url:
             user_input += f"\n\n[Nota do Sistema: O utilizador enviou uma fotografia. O link seguro gerado para a foto é: {foto_url}]"
 
-        # Se o utilizador mandar SÓ a foto sem texto, o Agente vai receber apenas a "[Nota do Sistema...]" e vai saber lidar com isso
         if not user_input.strip():
             user_input = "Estou a enviar apenas esta fotografia."
 

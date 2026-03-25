@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def health_check():
-    return "O Guia CMD está online e encadenando na nuvem! 🧗‍♂️"
+    return "O Guia CMD está online na nuvem."
 
 def run_server():
     # O Render vai nos dar uma porta (PORT) dinâmica, precisamos ouvi-la
