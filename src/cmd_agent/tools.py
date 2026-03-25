@@ -14,8 +14,8 @@ supabase: Client = create_client(url, key)
 
 # Inicializando a "máquina" que transforma texto em matemática (vetores)
 gerador_vetores = GoogleGenerativeAIEmbeddings(
-    model="models/text-embedding-004",
-    google_api_key=os.getenv("GEMINI_API_KEY") # Avisando qual é a chave correta!
+    model="models/embedding-001", # <-- Alterado para a versão estável 001
+    google_api_key=os.getenv("GEMINI_API_KEY") 
 )
 
 @tool
