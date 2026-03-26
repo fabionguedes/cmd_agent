@@ -106,4 +106,19 @@ class CMDAgent:
             return texto_final
             
         except Exception as e:
-            return f"Desculpa, ocorreu um erro interno ao processar sua solicitação: {e}"
+            erro_str = str(e).lower()
+            # Verifica se o erro é de limite de cota (Erro 429) em qualquer um dos modelos
+            if "429" in erro_str or "rate limit" in erro_str or "quota" in erro_str or "resource_exhausted" in erro_str:
+                return (
+                    "🥵 **Opa! Servidores sobrecarregados!**\n\n"
+                    "A galera tá mandando muito nas pedras hoje e minhas baterias de inteligência "
+                    "atingiram o limite máximo de conversas. \n\n"
+                    "Dá um descanso pras minhas polias e tenta mandar a mensagem de novo daqui a pouco!"
+                )
+            else:
+                # Mensagem padrão para qualquer outro erro técnico genérico
+                return (
+                    "Putz, escorreguei no crux! 🧗‍♂️💥\n\n"
+                    "Ocorreu um erro técnico inesperado no meu sistema. "
+                    "Tenta mandar a mensagem de novo em alguns instantes."
+                )

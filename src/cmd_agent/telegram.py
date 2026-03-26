@@ -39,7 +39,7 @@ class TelegramBot:
 
     async def start(self, client: Client, message: Message):
         await message.reply_text(
-            'Fala Bactéria, estás a querer escalar o quê em CMD? 🧗‍♂️'
+            'Fala atleta, esta querendo escalar o quê em CMD? 🧗‍♂️'
         )
         self.logger.info(f'Utilizador {message.from_user.id} iniciou uma conversa.')
 
@@ -53,7 +53,7 @@ class TelegramBot:
         foto_url = None
         if message.photo:
             try:
-                self.logger.info(f"A descarregar fotografia do utilizador {user_id}...")
+                self.logger.info(f"Descarregando fotografia do utilizador {user_id}...")
                 
                 file_path = await message.download()
                 foto_url = upload_foto_supabase(file_path, user_id)
