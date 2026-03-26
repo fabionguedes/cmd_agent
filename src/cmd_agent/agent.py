@@ -25,7 +25,13 @@ class CMDAgent:
             api_key=os.getenv('GEMINI_API_KEY')
         )
 
-        self.llm = llm_principal.with_fallbacks([llm_reserva])
+        llm_reserva_2 = ChatGroq(
+            model='openai/gpt-oss-20b',
+            temperature=0.1,
+            api_key=os.getenv('GROQ_API_KEY')
+        )
+
+        self.llm = llm_principal.with_fallbacks([llm_reserva, llm_reserva_2])
 
         instrucoes_sistema = """
         Você é o assistente virtual do Guia de Boulders.
