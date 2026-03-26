@@ -20,16 +20,13 @@ gerador_vetores = GoogleGenerativeAIEmbeddings(
 @tool
 def buscar_boulder(termo_busca: str) -> str:
     """
-    Busca informações sobre um boulder, setor ou grau usando Busca Semântica Avançada (RAG).
+    Busca informações sobre UM boulder específico usando Busca Semântica Avançada.
+    Use esta ferramenta quando o usuário procurar por descrições, nomes aproximados ou características de UMA via.
     """
     try:
-        # 1. Transforma o que o usuário digitou em um vetor matemático
         vetor_busca = gerador_vetores.embed_query(termo_busca)
-        
-        # CORREÇÃO: Corta o vetor gigante de 3072 para os exatos 768 que o banco aceita
         vetor_busca = vetor_busca[:768]
         
-        # 2. Chama a função inteligente do Supabase
         response = supabase.rpc(
             'match_boulders', 
             {
@@ -42,7 +39,7 @@ def buscar_boulder(termo_busca: str) -> str:
         data = response.data
         
         if not data:
-            return f"Não encontrei nenhuma via parecida com '{termo_busca}'. O banco de dados pode estar vazio ou a descrição foi muito fora do padrão."
+            return f"Não encontrei nenhuma via parecida com '{termo_busca}'."
             
         resultados = []
         for b in data:
@@ -67,22 +64,57 @@ def buscar_boulder(termo_busca: str) -> str:
         return f"Erro ao acessar o banco de dados semântico: {str(e)}"
 
 @tool
+def listar_boulders(setor: str = "", bloco: str = "", grau: str = "") -> str:
+    """
+    Gera listas exatas do banco de dados. 
+    Use APENAS quando o usuário pedir listas ou categorias (ex: "quais os V3", "blocos do setor Colina", "lista de vias do bloco X").
+    """
+    try:
+        query = supabase.table('boulders').select('nome_boulder, nome_bloco, setor, grau')
+        
+        # Aplica os filtros exatos que a Inteligência Artificial identificar na frase do usuário
+        if setor:
+            query = query.ilike('setor', f'%{setor}%')
+        if bloco:
+            query = query.ilike('nome_bloco', f'%{bloco}%')
+        if grau:
+            query = query.ilike('grau', f'%{grau}%')
+            
+        response = query.execute()
+        data = response.data
+        
+        if not data:
+            return "Nenhum resultado encontrado para esses filtros."
+        
+        # Extrai uma lista única de blocos encontrados na busca
+        blocos_encontrados = sorted(list(set(b.get('nome_bloco') for b in data if b.get('nome_bloco'))))
+        
+        linhas = []
+        for b in data:
+            linhas.append(f"- **{b.get('nome_boulder')}** ({b.get('grau')}) | Bloco: {b.get('nome_bloco') or '?'}")
+            
+        resultado_texto = f"Encontrei {len(data)} via(s) baseada(s) no seu pedido:\n\n"
+        
+        if blocos_encontrados:
+            resultado_texto += f"🪨 **Blocos nesta lista:** {', '.join(blocos_encontrados)}\n\n"
+            
+        resultado_texto += "🧗 **Lista de Boulders:**\n" + "\n".join(linhas)
+        
+        return resultado_texto
+
+    except Exception as e:
+        return f"Erro ao gerar a lista no banco de dados: {str(e)}"
+
+@tool
 def cadastrar_boulder(nome: str, setor: str, grau: str, saida: str, beta: str = "", bloco: str = "", foto_url: str = "") -> str:
     """
     Salva um novo boulder no banco de dados já com a inteligência semântica.
-    ATENÇÃO: Só use esta ferramenta APÓS ter coletado os dados com o usuário.
     """
     try:
-        # 1. Juntamos tudo que importa sobre a via em um texto contínuo
         texto_para_vetor = f"Via chamada {nome}, localizada no bloco {bloco}, setor {setor}. O grau é {grau} e a saída é {saida}. Informações adicionais e beta: {beta}."
-        
-        # 2. Transformamos a alma da via em um vetor
         vetor_da_via = gerador_vetores.embed_query(texto_para_vetor)
-        
-        # CORREÇÃO: Corta o vetor gigante de 3072 para os exatos 768 que o banco aceita
         vetor_da_via = vetor_da_via[:768]
 
-        # 3. Empacotamos tudo para enviar para o Supabase
         novo_boulder = {
             "nome_boulder": nome,
             "nome_bloco": bloco,
@@ -104,5 +136,5 @@ def cadastrar_boulder(nome: str, setor: str, grau: str, saida: str, beta: str = 
     except Exception as e:
         return f"Erro ao tentar cadastrar no banco de dados: {str(e)}"
 
-# Empacotando as ferramentas para o agente conseguir importar
-ferramentas = [buscar_boulder, cadastrar_boulder]
+# CORREÇÃO IMPORTANTE: Agora temos TRÊS ferramentas na lista!
+ferramentas = [buscar_boulder, listar_boulders, cadastrar_boulder]

@@ -1,7 +1,7 @@
-# Versão 1.2 - Guia CMD (Llama 3.3 + Gemini Fallback + Persona Atualizada)
+# Versão 1.3 - Guia CMD (Llama 3.3 + Gemini Fallback + Listagens Exatas)
 import os
 from langchain_groq import ChatGroq
-from langchain_google_genai import ChatGoogleGenerativeAI # NOVO: Importando o Gemini de volta para ser o reserva
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
@@ -13,24 +13,20 @@ class CMDAgent:
         self.session_id = session_id
         self.chat_history = []
         
-        # 1. Configuração do Modelo Principal (Llama 3.3 via Groq)
         llm_principal = ChatGroq(
             model_name='llama-3.3-70b-versatile', 
             temperature=0.1,
             api_key=os.getenv('GROQ_API_KEY')
         )
 
-        # 2. Configuração do Modelo Reserva (Gemini via Google Cloud)
         llm_reserva = ChatGoogleGenerativeAI(
             model='gemini-flash-latest',
             temperature=0.1,
             api_key=os.getenv('GEMINI_API_KEY')
         )
 
-        # 3. Blindagem: Une os dois. Se a Groq falhar, o Gemini assume instantaneamente e em silêncio
         self.llm = llm_principal.with_fallbacks([llm_reserva])
 
-        # Instruções do Sistema (Mantido 100% idêntico)
         instrucoes_sistema = """
         Você é o assistente virtual do Guia de Boulders.
         
@@ -98,14 +94,12 @@ class CMDAgent:
             
             output = resposta["output"]
             
-            # Garante a extração apenas do texto limpo
             if isinstance(output, list):
                 text_parts = [item['text'] for item in output if isinstance(item, dict) and 'text' in item]
                 texto_final = "\n".join(text_parts) if text_parts else str(output)
             else:
                 texto_final = str(output)
 
-            # Salva a interação na memória para a próxima mensagem
             self.chat_history.append(HumanMessage(content=mensagem_usuario))
             self.chat_history.append(AIMessage(content=texto_final))
             
