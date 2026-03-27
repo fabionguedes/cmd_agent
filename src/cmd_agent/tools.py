@@ -111,10 +111,21 @@ def cadastrar_boulder(nome: str, setor: str, grau: str, saida: str, beta: str = 
     Salva um novo boulder no banco de dados já com a inteligência semântica.
     """
     try:
+        # 🛡️ NOVO: Trava de Segurança Contra Duplicidade
+        # Verifica no Supabase se já existe alguma via com esse exato nome (ignorando maiúsculas/minúsculas)
+        checagem = supabase.table('boulders').select('nome_boulder').ilike('nome_boulder', nome).execute()
+        
+        if checagem.data:
+            return f"⚠️ ERRO DE DUPLICIDADE: Já existe uma via chamada '{nome}' cadastrada no guia. O cadastro foi cancelado."
+
+        # 1. Juntamos tudo que importa sobre a via em um texto contínuo
         texto_para_vetor = f"Via chamada {nome}, localizada no bloco {bloco}, setor {setor}. O grau é {grau} e a saída é {saida}. Informações adicionais e beta: {beta}."
+        
+        # 2. Transformamos a alma da via em um vetor
         vetor_da_via = gerador_vetores.embed_query(texto_para_vetor)
         vetor_da_via = vetor_da_via[:768]
 
+        # 3. Empacotamos tudo para enviar para o Supabase
         novo_boulder = {
             "nome_boulder": nome,
             "nome_bloco": bloco,
@@ -129,7 +140,7 @@ def cadastrar_boulder(nome: str, setor: str, grau: str, saida: str, beta: str = 
         response = supabase.table('boulders').insert(novo_boulder).execute()
         
         if response.data:
-            return f"Sucesso! O boulder '{nome}' foi cadastrado com inteligência semântica no croqui digital."
+            return f"Sucesso! O boulder '{nome}' foi cadastrado no croqui digital."
         else:
             return "Ocorreu um erro desconhecido ao tentar salvar no banco."
             
