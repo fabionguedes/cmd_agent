@@ -3,6 +3,7 @@ import unicodedata
 from supabase import create_client, Client
 from langchain_core.tools import tool
 from dotenv import load_dotenv
+from youtube_search import YoutubeSearch
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
@@ -142,5 +143,29 @@ def atualizar_boulder(nome_atual: str, novo_nome: str = "", setor: str = "", gra
     except Exception as e:
         return f"Erro ao tentar atualizar no banco de dados: {str(e)}"
 
+@tool
+def buscar_video_youtube(nome_boulder: str) -> str:
+    """
+    Busca vídeos do cadena ou tentativa de um boulder específico no YouTube.
+    Acione esta ferramenta SEMPRE que for mostrar as informações de um boulder específico para o usuário.
+    """
+    try:
+        # Monta uma busca bem específica para evitar vídeos aleatórios
+        query = f"boulder {nome_boulder} escalada Conceição do Mato Dentro"
+        resultados = YoutubeSearch(query, max_results=2).to_dict()
+        
+        if not resultados:
+            return "Nenhum vídeo encontrado no YouTube."
+        
+        links = []
+        for vid in resultados:
+            titulo = vid.get('title', 'Vídeo')
+            link = f"https://www.youtube.com{vid.get('url_suffix')}"
+            links.append(f"  📺 [{titulo}]({link})")
+            
+        return "\n".join(links)
+    except Exception as e:
+        return "Erro ao buscar vídeos no YouTube."
+
 # A quarta ferramenta foi adicionada à lista!
-ferramentas = [buscar_boulder, listar_boulders, cadastrar_boulder, atualizar_boulder]
+ferramentas = [buscar_boulder, listar_boulders, cadastrar_boulder, atualizar_boulder, buscar_video_youtube]

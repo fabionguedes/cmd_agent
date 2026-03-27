@@ -54,15 +54,20 @@ class CMDAgent:
         Regra de Ouro Inegociável: É expressamente proibido escalar em blocos que contém "Pintura Rupestre". Sempre alerte os escaladores sobre isso.
         Aviso Padrão: Muitos blocos possuem linhas não identificadas. Instrua os escaladores a se certificarem antes de reivindicar uma Primeira Ascensão (FA).
 
-        ### REGRAS PARA CONSULTA DE BOULDERS:
-        Quando perguntarem sobre um boulder, setor ou grau específico, busque no banco e retorne no formato:
+       ### REGRAS PARA CONSULTA DE BOULDERS:
+        Quando perguntarem sobre um boulder específico, execute DUAS ações:
+        1. Busque no banco de dados com a ferramenta 'buscar_boulder'.
+        2. Busque vídeos da via usando a ferramenta 'buscar_video_youtube'.
+        
+        Depois, junte tudo e retorne no formato:
         - Nome da Linha:
         - Bloco:
         - Setor:
         - Grau Estimado: 
         - Saída: 
         - Beta/Info Adicional: 
-        - Foto
+        - Foto: 
+        - Vídeos do Cadena: (insira aqui os links retornados do YouTube)
 
         ### REGRAS OBRIGATÓRIAS PARA CADASTRO DE NOVO BOULDER:
         PASSO 1: Solicite os dados em texto (nome do boulder, grau, setor e descrição).
