@@ -150,12 +150,17 @@ def buscar_video_youtube(nome_boulder: str) -> str:
     Acione esta ferramenta SEMPRE que for mostrar as informações de um boulder específico para o usuário.
     """
     try:
-        # Monta uma busca bem específica para evitar vídeos aleatórios
-        query = f"boulder {nome_boulder} escalada Conceição do Mato Dentro"
-        resultados = YoutubeSearch(query, max_results=2).to_dict()
+        # 1. TENTATIVA RIGOROSA: Força o YouTube a achar o nome exato usando aspas
+        query_exata = f'"{nome_boulder}" boulder CMD'
+        resultados = YoutubeSearch(query_exata, max_results=2).to_dict()
         
+        # 2. TENTATIVA FLEXÍVEL (Fallback): Se não achar o nome exato, tenta sem aspas
         if not resultados:
-            return "Nenhum vídeo encontrado no YouTube."
+            query_flexivel = f"{nome_boulder} boulder escalada"
+            resultados = YoutubeSearch(query_flexivel, max_results=2).to_dict()
+            
+        if not resultados:
+            return "Nenhum vídeo específico desta via foi encontrado no YouTube."
         
         links = []
         for vid in resultados:
